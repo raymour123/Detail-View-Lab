@@ -17,7 +17,7 @@ import java.io.InputStreamReader;
 /**
  * Created by drewmahrt on 12/28/15.
  */
-public class ShoppingSQLiteOpenHelper extends SQLiteOpenHelper{
+public class ShoppingSQLiteOpenHelper extends SQLiteOpenHelper {
     private static final String TAG = ShoppingSQLiteOpenHelper.class.getCanonicalName();
 
     private static final int DATABASE_VERSION = 7;
@@ -30,7 +30,7 @@ public class ShoppingSQLiteOpenHelper extends SQLiteOpenHelper{
     public static final String COL_ITEM_DESCRIPTION = "DESCRIPTION";
     public static final String COL_ITEM_TYPE = "TYPE";
 
-    public static final String[] SHOPPING_COLUMNS = {COL_ID,COL_ITEM_NAME,COL_ITEM_DESCRIPTION,COL_ITEM_PRICE,COL_ITEM_TYPE};
+    public static final String[] SHOPPING_COLUMNS = {COL_ID, COL_ITEM_NAME, COL_ITEM_DESCRIPTION, COL_ITEM_PRICE, COL_ITEM_TYPE};
 
     private static final String CREATE_SHOPPING_LIST_TABLE =
             "CREATE TABLE " + SHOPPING_LIST_TABLE_NAME +
@@ -54,59 +54,78 @@ public class ShoppingSQLiteOpenHelper extends SQLiteOpenHelper{
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         db.execSQL("DROP TABLE IF EXISTS " + SHOPPING_LIST_TABLE_NAME);
         this.onCreate(db);
+
     }
 
-    //Add new itinerary list
-    public long addItem(String name, String description, String price, String type){
-        ContentValues values = new ContentValues();
-        values.put(COL_ITEM_NAME, name);
-        values.put(COL_ITEM_DESCRIPTION, description);
-        values.put(COL_ITEM_PRICE, price);
-        values.put(COL_ITEM_TYPE, type);
+    public Cursor showAllGroceries() {
+        SQLiteDatabase db = getReadableDatabase();
 
-        SQLiteDatabase db = this.getWritableDatabase();
-        long returnId = db.insert(SHOPPING_LIST_TABLE_NAME, null, values);
-        db.close();
-        return returnId;
-    }
-
-    public Cursor getShoppingList(){
-
-        SQLiteDatabase db = this.getReadableDatabase();
-
-        Cursor cursor = db.query(SHOPPING_LIST_TABLE_NAME, // a. table
-                SHOPPING_COLUMNS, // b. column names
-                null, // c. selections
-                null, // d. selections args
-                null, // e. group by
-                null, // f. having
-                null, // g. order by
-                null); // h. limit
+        Cursor cursor = db.query(SHOPPING_LIST_TABLE_NAME,
+                SHOPPING_COLUMNS,
+                null,
+                null,
+                null, null, null);
 
         return cursor;
     }
 
-    public int deleteItem(int id){
-        SQLiteDatabase db = getWritableDatabase();
-        int deleteNum = db.delete(SHOPPING_LIST_TABLE_NAME,
+    public String getColItemDescription(int id) {
+        SQLiteDatabase db = getReadableDatabase();
+        Cursor cursor = db.query(SHOPPING_LIST_TABLE_NAME,
+                new String[]{COL_ITEM_DESCRIPTION},
                 COL_ID + " = ?",
-                new String[]{String.valueOf(id)});
-        db.close();
-        return deleteNum;
+                new String[]{String.valueOf(id)},
+                null, null, null);
+
+        if (cursor.moveToFirst()) {
+            return cursor.getString(cursor.getColumnIndex(COL_ITEM_DESCRIPTION));
+        } else {
+            return "There is no description by that ID";
+        }
     }
 
-    public Cursor searchShoppingList(String query){
-        SQLiteDatabase db = this.getReadableDatabase();
+    public String getColItemPrice(int id) {
+        SQLiteDatabase db = getReadableDatabase();
+        Cursor cursor = db.query(SHOPPING_LIST_TABLE_NAME,
+                new String[]{COL_ITEM_PRICE},
+                COL_ID + " = ?",
+                new String[]{String.valueOf(id)},
+                null, null, null);
 
-        Cursor cursor = db.query(SHOPPING_LIST_TABLE_NAME, // a. table
-                SHOPPING_COLUMNS, // b. column names
-                COL_ITEM_NAME + " LIKE ?", // c. selections
-                new String[]{"%" + query + "%"}, // d. selections args
-                null, // e. group by
-                null, // f. having
-                null, // g. order by
-                null); // h. limit
+        if (cursor.moveToFirst()) {
+            return cursor.getString(cursor.getColumnIndex(COL_ITEM_PRICE));
+        } else {
+            return "There is no price by that ID";
+        }
+    }
 
-        return cursor;
+    public String getColItemType(int id) {
+        SQLiteDatabase db = getReadableDatabase();
+        Cursor cursor = db.query(SHOPPING_LIST_TABLE_NAME,
+                new String[]{COL_ITEM_TYPE},
+                COL_ID + " = ?",
+                new String[]{String.valueOf(id)},
+                null, null, null);
+
+        if (cursor.moveToFirst()) {
+            return cursor.getString(cursor.getColumnIndex(COL_ITEM_TYPE));
+        } else {
+            return "There is no type by that ID";
+        }
+    }
+
+    public String getColItemName(int id) {
+        SQLiteDatabase db = getReadableDatabase();
+        Cursor cursor = db.query(SHOPPING_LIST_TABLE_NAME,
+                new String[]{COL_ITEM_NAME},
+                COL_ID + " = ?",
+                new String[]{String.valueOf(id)},
+                null, null, null);
+
+        if (cursor.moveToFirst()) {
+            return cursor.getString(cursor.getColumnIndex(COL_ITEM_NAME));
+        } else {
+            return "There is no name by that ID";
+        }
     }
 }

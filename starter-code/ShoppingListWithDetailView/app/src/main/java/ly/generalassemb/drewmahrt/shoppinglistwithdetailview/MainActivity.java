@@ -1,28 +1,23 @@
 package ly.generalassemb.drewmahrt.shoppinglistwithdetailview;
 
-import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
-import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.SearchView;
-import android.view.Menu;
-import android.view.MenuInflater;
+import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.CursorAdapter;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
+import android.widget.TextView;
 
 import ly.generalassemb.drewmahrt.shoppinglistwithdetailview.setup.DBAssetHelper;
 
 public class MainActivity extends AppCompatActivity {
-    private ListView mShoppingListView;
-    private CursorAdapter mCursorAdapter;
-    private ShoppingSQLiteOpenHelper mHelper;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -32,43 +27,38 @@ public class MainActivity extends AppCompatActivity {
         DBAssetHelper dbSetup = new DBAssetHelper(MainActivity.this);
         dbSetup.getReadableDatabase();
 
-        mShoppingListView = (ListView)findViewById(R.id.shopping_list_view);
-        mHelper = new ShoppingSQLiteOpenHelper(MainActivity.this);
+        ShoppingSQLiteOpenHelper instance = new ShoppingSQLiteOpenHelper(this);
+        ListView mListView = (ListView) findViewById(R.id.shopping_list_view);
 
-        Cursor cursor = mHelper.getShoppingList();
+        final Cursor cursor = instance.showAllGroceries();
+        CursorAdapter adapter = new CursorAdapter(MainActivity.this, cursor,
+                CursorAdapter.FLAG_REGISTER_CONTENT_OBSERVER) {
+            @Override
+            public View newView(Context context, Cursor cursor, ViewGroup viewGroup) {
+                return LayoutInflater.from(context).inflate(R.layout.grocery_item, viewGroup, false);
+            }
 
-        mCursorAdapter = new SimpleCursorAdapter(this,android.R.layout.simple_list_item_1,cursor,new String[]{ShoppingSQLiteOpenHelper.COL_ITEM_NAME},new int[]{android.R.id.text1},0);
-        mShoppingListView.setAdapter(mCursorAdapter);
+            @Override
+            public void bindView(View view, Context context, Cursor cursor) {
+                String groceryName = cursor.getString(cursor.getColumnIndex(
+                        ShoppingSQLiteOpenHelper.COL_ITEM_NAME));
 
-        handleIntent(getIntent());
-    }
+                TextView name = (TextView) view.findViewById(R.id.grocery_name);
 
-    public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater menuInflater = getMenuInflater();
-        menuInflater.inflate(R.menu.options_menu, menu);
+                name.setText(groceryName);
+            }
+        };
+        mListView.setAdapter(adapter);
 
-        // Associate searchable configuration with the SearchView
-        SearchManager searchManager =
-                (SearchManager) getSystemService(Context.SEARCH_SERVICE);
-        SearchView searchView =
-                (SearchView) menu.findItem(R.id.search).getActionView();
-        searchView.setSearchableInfo(
-                searchManager.getSearchableInfo(getComponentName()));
-
-        return true;
-    }
-
-    @Override
-    protected void onNewIntent(Intent intent) {
-        handleIntent(intent);
-    }
-
-    private void handleIntent(Intent intent) {
-        if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
-            String query = intent.getStringExtra(SearchManager.QUERY);
-            Cursor cursor = mHelper.searchShoppingList(query);
-            mCursorAdapter.changeCursor(cursor);
-            mCursorAdapter.notifyDataSetChanged();
-        }
+        mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                Intent intent = new Intent(MainActivity.this, SecondActivity.class);
+                cursor.moveToPosition(i);
+                int id = cursor.getInt(cursor.getColumnIndex(ShoppingSQLiteOpenHelper.COL_ID));
+                intent.putExtra(ShoppingSQLiteOpenHelper.COL_ID, id);
+                startActivity(intent);
+            }
+        });
     }
 }
